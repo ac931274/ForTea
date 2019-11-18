@@ -1,20 +1,3 @@
-#region License
-//    Copyright 2012 Julien Lebosquain
-// 
-//    Licensed under the Apache License, Version 2.0 (the "License");
-//    you may not use this file except in compliance with the License.
-//    You may obtain a copy of the License at
-// 
-//        http://www.apache.org/licenses/LICENSE-2.0
-// 
-//    Unless required by applicable law or agreed to in writing, software
-//    distributed under the License is distributed on an "AS IS" BASIS,
-//    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//    See the License for the specific language governing permissions and
-//    limitations under the License.
-#endregion
-
-
 using JetBrains.DataFlow;
 using System;
 using System.Collections.Generic;
@@ -22,15 +5,15 @@ using System.IO;
 using JetBrains.Annotations;
 using JetBrains.Application.Infra;
 using JetBrains.Application.Threading;
+using JetBrains.Lifetimes;
 using JetBrains.ProjectModel;
 using JetBrains.ProjectModel.ProjectImplementation;
 using JetBrains.ProjectModel.Properties;
 using JetBrains.ProjectModel.Properties.Common;
 using JetBrains.ProjectModel.References;
 using JetBrains.Util;
+using JetBrains.Util.dataStructures;
 using JetBrains.Util.Dotnet.TargetFrameworkIds;
-//using PlatformID = JetBrains.Application.platforms.PlatformID;
-
 
 namespace GammaJul.ReSharper.ForTea.Psi {
 
@@ -121,8 +104,8 @@ namespace GammaJul.ReSharper.ForTea.Psi {
 		IProjectItem IProjectFolder.GetSubItem(string name)
 			=> null;
 
-		IList<IProjectItem> IProjectFolder.GetSubItems(string name)
-			=> EmptyList<IProjectItem>.InstanceList;
+		ReadOnlyFrugalLocalList<IProjectItem> IProjectFolder.GetSubItems(string name)
+			=> default;
 
 		IList<IProjectItem> IProjectFolder.GetSubItems()
 			=> EmptyList<IProjectItem>.InstanceList;
@@ -189,6 +172,9 @@ namespace GammaJul.ReSharper.ForTea.Psi {
 		ICollection<FileSystemPath> IProject.GetIntermidiateDirectories()
 			=> EmptyList<FileSystemPath>.Instance;
 
+		public FileSystemPath GetRefOutputFilePath(TargetFrameworkId targetFrameworkId)
+			=> FileSystemPath.Empty;
+
 		private sealed class T4ResolveProjectProperties : ProjectPropertiesBase<UnsupportedProjectConfiguration> {
 
 			public override IBuildSettings BuildSettings
@@ -201,17 +187,18 @@ namespace GammaJul.ReSharper.ForTea.Psi {
 				=> ProjectKind.MISC_FILES_PROJECT;
 
 			public T4ResolveProjectProperties([NotNull] TargetFrameworkId targetFrameworkId)
-				: base(EmptyList<Guid>.InstanceList, Guid.Empty, new[] { targetFrameworkId }, dotNetCoreSDK: null) {
+				: base(EmptyList<Guid>.InstanceList, Guid.Empty, new[] { targetFrameworkId },dotNetCorePlatform: null) {
 			}
 
 		}
 
 		public T4ResolveProject(
-			[NotNull] Lifetime lifetime,
+			Lifetime lifetime,
 			[NotNull] ISolution solution,
 			[NotNull] IShellLocks shellLocks,
 			[NotNull] TargetFrameworkId targetFrameworkId,
-			[NotNull] IUserDataHolder dataHolder) {
+			[NotNull] IUserDataHolder dataHolder
+		) {
 			_shellLocks = shellLocks;
 			_targetFrameworkId = targetFrameworkId;
 			_solution = solution;

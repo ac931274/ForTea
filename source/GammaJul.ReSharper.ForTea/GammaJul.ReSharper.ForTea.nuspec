@@ -17,6 +17,6 @@
 		</dependencies>
 	</metadata>
 	<files>
-		<file src="GammaJul.ReSharper.ForTea\bin\$configuration$\GammaJul.ReSharper.ForTea.dll" target="DotFiles" />
+		<file src="..\..\output\$configuration$\GammaJul.ReSharper.ForTea.dll" target="DotFiles" />
 	</files>
 </package>

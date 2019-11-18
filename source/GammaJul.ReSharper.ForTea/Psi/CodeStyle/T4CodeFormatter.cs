@@ -1,22 +1,3 @@
-#region License
-
-//    Copyright 2012 Julien Lebosquain
-// 
-//    Licensed under the Apache License, Version 2.0 (the "License");
-//    you may not use this file except in compliance with the License.
-//    You may obtain a copy of the License at
-// 
-//        http://www.apache.org/licenses/LICENSE-2.0
-// 
-//    Unless required by applicable law or agreed to in writing, software
-//    distributed under the License is distributed on an "AS IS" BASIS,
-//    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//    See the License for the specific language governing permissions and
-//    limitations under the License.
-
-#endregion
-
-
 using GammaJul.ReSharper.ForTea.Parsing;
 using JetBrains.Annotations;
 using JetBrains.ReSharper.Psi;
@@ -33,15 +14,13 @@ namespace GammaJul.ReSharper.ForTea.Psi.CodeStyle {
 	[Language(typeof(T4Language))]
 	public class T4CodeFormatter : CodeFormatterBase<T4FormatSettingsKey> {
 
-		public override PsiLanguageType LanguageType
-			=> T4Language.Instance;
-
 		protected override CodeFormattingContext CreateFormatterContext(
 			CodeFormatProfile profile,
 			ITreeNode firstNode,
 			ITreeNode lastNode,
 			AdditionalFormatterParameters parameters,
-			ICustomFormatterInfoProvider provider)
+			ICustomFormatterInfoProvider provider
+		)
 			=> new CodeFormattingContext(this, firstNode, lastNode, profile, FormatterLoggerProvider.FormatterLogger, parameters);
 
 		public override bool IsWhitespaceToken(ITokenNode token)
@@ -74,16 +53,16 @@ namespace GammaJul.ReSharper.ForTea.Psi.CodeStyle {
 		public override ITreeNode CreateNewLine(LineEnding lineEnding, NodeType lineBreakType = null)
 			=> T4TokenNodeTypes.NewLine.Create(lineEnding.GetPresentation());
 
-
 		public override ITreeRange Format(
 			ITreeNode firstElement,
 			ITreeNode lastElement,
 			CodeFormatProfile profile,
-			AdditionalFormatterParameters parameters = null)
+			AdditionalFormatterParameters parameters = null
+		)
 			=> new TreeRange(firstElement, lastElement);
 
-		public T4CodeFormatter([NotNull] CodeFormatterRequirements requirements)
-			: base(requirements) {
+		public T4CodeFormatter([NotNull] T4Language t4Language, [NotNull] CodeFormatterRequirements requirements)
+			: base(t4Language, requirements) {
 		}
 
 	}

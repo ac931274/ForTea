@@ -1,25 +1,10 @@
-#region License
-//    Copyright 2012 Julien Lebosquain
-// 
-//    Licensed under the Apache License, Version 2.0 (the "License");
-//    you may not use this file except in compliance with the License.
-//    You may obtain a copy of the License at
-// 
-//        http://www.apache.org/licenses/LICENSE-2.0
-// 
-//    Unless required by applicable law or agreed to in writing, software
-//    distributed under the License is distributed on an "AS IS" BASIS,
-//    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//    See the License for the specific language governing permissions and
-//    limitations under the License.
-#endregion
 using GammaJul.ReSharper.ForTea.Parsing;
 using GammaJul.ReSharper.ForTea.Psi;
 using GammaJul.ReSharper.ForTea.Services.CodeCompletion;
 using JetBrains.Annotations;
 using JetBrains.Application.CommandProcessing;
 using JetBrains.Application.Settings;
-using JetBrains.DataFlow;
+using JetBrains.Lifetimes;
 using JetBrains.ProjectModel;
 using JetBrains.ReSharper.Feature.Services.CodeCompletion;
 using JetBrains.ReSharper.Feature.Services.TypingAssist;
@@ -27,15 +12,13 @@ using JetBrains.ReSharper.Psi;
 using JetBrains.ReSharper.Psi.Parsing;
 using JetBrains.ReSharper.Psi.CachingLexers;
 using JetBrains.TextControl;
-using JetBrains.TextControl.Util;
 
 namespace GammaJul.ReSharper.ForTea.Services.TypingAssist {
 
 	[SolutionComponent]
 	public class T4TypingAssist : TypingAssistLanguageBase<T4Language>, ITypingHandler {
 
-		private readonly SkippingTypingAssist _skippingTypingAssist;
-		private readonly ICodeCompletionSessionManager _codeCompletionSessionManager;
+		[NotNull] private readonly ICodeCompletionSessionManager _codeCompletionSessionManager;
 
 		protected override bool IsSupported(ITextControl textControl) {
 			IPsiSourceFile psiSourceFile = textControl.Document.GetPsiSourceFile(Solution);
@@ -47,9 +30,7 @@ namespace GammaJul.ReSharper.ForTea.Services.TypingAssist {
 		public bool QuickCheckAvailability(ITextControl textControl, IPsiSourceFile projectFile)
 			=> projectFile.LanguageType.Is<T4ProjectFileType>();
 
-		/// <summary>
-		/// When = is typed, insert "".
-		/// </summary>
+		/// <summary>When = is typed, insert "".</summary>
 		private bool OnEqualTyped(ITypingContext context) {
 			ITextControl textControl = context.TextControl;
 
@@ -65,7 +46,7 @@ namespace GammaJul.ReSharper.ForTea.Services.TypingAssist {
 				return false;
 
 			// insert =
-			TextControlUtil.DeleteSelection(textControl);
+			textControl.Selection.Delete();
 			textControl.FillVirtualSpaceUntilCaret();
 			textControl.Document.InsertText(offset, "=");
 			textControl.Caret.MoveTo(offset + 1, CaretVisualPlacement.DontScrollIfVisible);
@@ -78,7 +59,7 @@ namespace GammaJul.ReSharper.ForTea.Services.TypingAssist {
 				}
 
 				// ignore if a subsequent " is typed by the user
-				_skippingTypingAssist.SetCharsToSkip(textControl.Document, "\"");
+				SkippingTypingAssist.SetCharsToSkip(textControl.Document, "\"");
 
 				// popup auto completion
 				_codeCompletionSessionManager.ExecuteAutoCompletion<T4AutopopupSettingsKey>(textControl, Solution, key => key.InDirectives);
@@ -87,15 +68,13 @@ namespace GammaJul.ReSharper.ForTea.Services.TypingAssist {
 			return true;
 		}
 
-		/// <summary>
-		/// When a " is typed, insert another ".
-		/// </summary>
+		/// <summary>When a " is typed, insert another ".</summary>
 		private bool OnQuoteTyped(ITypingContext context) {
 			ITextControl textControl = context.TextControl;
 
 			// the " character should be skipped to avoid double insertions
-			if (_skippingTypingAssist.ShouldSkip(textControl.Document, context.Char)) {
-				_skippingTypingAssist.SkipIfNeeded(textControl.Document, context.Char);
+			if (SkippingTypingAssist.ShouldSkip(textControl.Document, context.Char)) {
+				SkippingTypingAssist.SkipIfNeeded(textControl.Document, context.Char);
 				return true;
 			}
 
@@ -117,7 +96,7 @@ namespace GammaJul.ReSharper.ForTea.Services.TypingAssist {
 				return false;
 
 			// insert the first "
-			TextControlUtil.DeleteSelection(textControl);
+			textControl.Selection.Delete();
 			textControl.FillVirtualSpaceUntilCaret();
 			textControl.Document.InsertText(offset, "\"");
 
@@ -129,7 +108,7 @@ namespace GammaJul.ReSharper.ForTea.Services.TypingAssist {
 				}
 
 				// ignore if a subsequent " is typed by the user
-				_skippingTypingAssist.SetCharsToSkip(textControl.Document, "\"");
+				SkippingTypingAssist.SetCharsToSkip(textControl.Document, "\"");
 
 				// popup auto completion
 				_codeCompletionSessionManager.ExecuteAutoCompletion<T4AutopopupSettingsKey>(textControl, Solution, key => key.InDirectives);
@@ -138,13 +117,20 @@ namespace GammaJul.ReSharper.ForTea.Services.TypingAssist {
 			return true;
 		}
 
-		public T4TypingAssist([NotNull] Lifetime lifetime, [NotNull] ISolution solution, [NotNull] ISettingsStore settingsStore,
-			[NotNull] CachingLexerService cachingLexerService, [NotNull] ICommandProcessor commandProcessor, [NotNull] IPsiServices psiServices,
-			[NotNull] ITypingAssistManager typingAssistManager, [NotNull] SkippingTypingAssist skippingTypingAssist,
-			[NotNull] ICodeCompletionSessionManager codeCompletionSessionManager, IExternalIntellisenseHost externalIntellisenseHost)
-			: base(solution, settingsStore, cachingLexerService, commandProcessor, psiServices, externalIntellisenseHost,skippingTypingAssist) {
+		public T4TypingAssist(
+			Lifetime lifetime,
+			[NotNull] ISolution solution,
+			[NotNull] ISettingsStore settingsStore,
+			[NotNull] CachingLexerService cachingLexerService,
+			[NotNull] ICommandProcessor commandProcessor,
+			[NotNull] IPsiServices psiServices,
+			[NotNull] IExternalIntellisenseHost externalIntellisenseHost,
+			[NotNull] SkippingTypingAssist skippingTypingAssist,
+			[NotNull] ITypingAssistManager typingAssistManager,
+			[NotNull] ICodeCompletionSessionManager codeCompletionSessionManager
+		)
+			: base(solution, settingsStore, cachingLexerService, commandProcessor, psiServices, externalIntellisenseHost, skippingTypingAssist) {
 			
-			_skippingTypingAssist = skippingTypingAssist;
 			_codeCompletionSessionManager = codeCompletionSessionManager;
 
 			typingAssistManager.AddTypingHandler(lifetime, '=', this, OnEqualTyped, IsTypingSmartParenthesisHandlerAvailable);

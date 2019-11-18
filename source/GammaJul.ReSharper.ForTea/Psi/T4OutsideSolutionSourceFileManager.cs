@@ -1,25 +1,10 @@
-#region License
-//    Copyright 2012 Julien Lebosquain
-// 
-//    Licensed under the Apache License, Version 2.0 (the "License");
-//    you may not use this file except in compliance with the License.
-//    You may obtain a copy of the License at
-// 
-//        http://www.apache.org/licenses/LICENSE-2.0
-// 
-//    Unless required by applicable law or agreed to in writing, software
-//    distributed under the License is distributed on an "AS IS" BASIS,
-//    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//    See the License for the specific language governing permissions and
-//    limitations under the License.
-#endregion
-
 using System;
 using JetBrains.Annotations;
 using JetBrains.Application.FileSystemTracker;
-using JetBrains.DataFlow;
+using JetBrains.Diagnostics;
 using JetBrains.DocumentManagers;
 using JetBrains.DocumentModel;
+using JetBrains.Lifetimes;
 using JetBrains.Metadata.Reader.API;
 using JetBrains.ProjectModel;
 using JetBrains.ReSharper.Psi;
@@ -30,9 +15,7 @@ using JetBrains.Util.DataStructures;
 
 namespace GammaJul.ReSharper.ForTea.Psi {
 
-	/// <summary>
-	/// A component that manages <see cref="IDocument"/>s for files outside the solution.
-	/// </summary>
+	/// <summary>A component that manages <see cref="IDocument"/>s for files outside the solution.</summary>
 	[SolutionComponent]
 	internal class T4OutsideSolutionSourceFileManager : IPsiModuleFactory {
 
@@ -71,18 +54,19 @@ namespace GammaJul.ReSharper.ForTea.Psi {
 		}
 
 		public T4OutsideSolutionSourceFileManager(
-			[NotNull] Lifetime lifetime,
+			Lifetime lifetime,
 			[NotNull] IProjectFileExtensions projectFileExtensions,
 			[NotNull] PsiProjectFileTypeCoordinator psiProjectFileTypeCoordinator,
 			[NotNull] DocumentManager documentManager,
 			[NotNull] ISolution solution,
 			[NotNull] T4Environment t4Environment,
-			[NotNull] IFileSystemTracker fileSystemTracker) {
+			[NotNull] IFileSystemTracker fileSystemTracker
+		) {
 			_projectFileExtensions = projectFileExtensions;
 			_psiProjectFileTypeCoordinator = psiProjectFileTypeCoordinator;
 			_documentManager = documentManager;
 			_sourceFiles = new StrongToWeakDictionary<FileSystemPath, IPsiSourceFile>(lifetime);
-			_psiModule = new PsiModuleOnFileSystemPaths(solution, "T4OutsideSolution", Guid.NewGuid().ToString(), t4Environment.TargetFrameworkId, fileSystemTracker, lifetime);
+			_psiModule = new PsiModuleOnFileSystemPaths(solution, "T4OutsideSolution", Guid.NewGuid().ToString(), t4Environment.TargetFrameworkId, fileSystemTracker, lifetime,true);
 			lifetime.OnTermination(_sourceFiles);
 		}
 
